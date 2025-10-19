@@ -1,0 +1,103 @@
+:root {
+    --HOR_WIDTH: 100px;
+    --HOR_HEIGHT: 250px;
+    --VER_WIDTH: 320px;
+    --VER_HEIGHT: 25px;
+
+    --COLOR_BG: hsl(237, 41%, 92%);
+    --COLOR_MAIN: #ffb356;
+    /* --COLOR_MAIN_UNDER: blue;
+    --COLOR_SECONDARY: blue;
+    --COLOR_SECONDARY_UNDER: black; */
+    --COLOR_HOVER: #ff7300;
+    --COLOR_SELECT: hsl(210, 73%, 66%);
+    --COLOR_TEXT: #311b01;
+}
+html{
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+body{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+div.main {
+    width: 100vw;
+    height: 100vh;
+    overflow-y: scroll;
+    scrollbar-width: thin;
+	scrollbar-color: lightgray transparent;
+}
+path.curve {
+    stroke: var(--COLOR_MAIN);
+    fill: none;
+}
+g.matrix {
+    overflow-x: visible;
+}
+g text {
+    fill: var(--COLOR_TEXT);
+    user-select: none;
+}
+g.neg text {
+    fill:#cd2613;
+    user-select: none;
+}
+g.pos text {
+    fill:#1351cd;
+    user-select: none;
+}
+g.cls text {
+    text-decoration: underline;
+}
+g.exp text:hover {
+    transition: all 50ms linear;
+    fill: var(--COLOR_HOVER);
+}
+/* g.ver-node.exp text:hover {
+    transition: all 250ms ease-out;
+    font-size: large;
+} */
+g.hide {
+    display: none;
+}
+/* rect.cell {
+    fill: var(--COLOR_SELECT);
+    opacity: 25%;
+} */
+rect.cmd-hor, rect.cmd-ver {
+    fill: var(--COLOR_BG);
+    opacity: 20%;
+}
+rect.cmd-hor {
+    height: var(--HOR_HEIGHT);
+    width: var(--HOR_WIDTH);
+    /* stroke: black; */
+}
+rect.cmd-ver {
+    height: var(--VER_HEIGHT);
+    width: var(--VER_WIDTH);
+    /* stroke: gray; */
+}
+
+g.ver-node.sel rect {
+    fill: var(--COLOR_SELECT);
+    width: 100%;
+}
+
+g.hor-node.sel rect {
+    fill: var(--COLOR_SELECT);
+    height: 100%;
+}
+
+/* g.cell rect {
+    height: var(--VER_HEIGHT);
+    width: var(--HOR_WIDTH);
+    fill:var(--COLOR_BG);
+    opacity: 50%;
+} */
+g.cell text {
+   font-family:'Courier New';
+   text-anchor: end;
+}
