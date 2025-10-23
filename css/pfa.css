@@ -1,7 +1,7 @@
 :root {
     --HOR_WIDTH: 100px;
     --HOR_HEIGHT: 200px;
-    --VER_WIDTH: 300px;
+    --VER_WIDTH: 325px;
     --VER_HEIGHT: 25px;
 
     --COLOR_BG: hsl(237, 41%, 92%);
@@ -10,7 +10,8 @@
     --COLOR_SECONDARY: blue;
     --COLOR_SECONDARY_UNDER: black; */
     --COLOR_HOVER: #ff7300;
-    --COLOR_SELECT: hsl(210, 73%, 66%);
+    --COLOR_SELECT: hsl(210, 78%, 78%);
+    /* --COLOR_CELL: hsl(191, 22%, 90%); */
     --COLOR_TEXT: #311b01;
 }
 html{
@@ -76,7 +77,11 @@ g.ver-node.sel rect {
 }
 g.hor-node.sel rect {
     fill: var(--COLOR_SELECT);
-    height: 100%;
+    /* height: 100%; */
+}
+g.tape.sel rect {
+    fill: var(--COLOR_SELECT);
+    opacity: 20%;
 }
 rect.cmd-hor, rect.cmd-ver {
     fill: var(--COLOR_BG);
@@ -88,8 +93,21 @@ rect.cmd-hor {
 }
 rect.cmd-ver {
     height: var(--VER_HEIGHT);
-    /* width: var(--VER_WIDTH); */
-    width: 100%;
+    width: var(--VER_WIDTH);
+    /* width: 100%; */
+}
+g.cell rect {
+    height: var(--VER_HEIGHT);
+    width: var(--HOR_WIDTH);
+    fill: var(--COLOR_BG);
+    opacity: 20%;
+}
+g.tape g.cell.sel rect {
+    fill: var(--COLOR_SELECT);
+    opacity: 20%;
+}
+g.tape.sel g.cell.sel rect {
+    opacity: 40%;
 }
 g.cell text {
    font-family:'Courier New';
