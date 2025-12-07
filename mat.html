@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Движения материалов</title>
+    <!-- <link rel="stylesheet" href="/css/bootstrap.min.css"> -->
+    <link rel="stylesheet" href="./css/mat.css">
+	<!-- <script src="/js/bootstrap.bundle.min.js"></script> -->
+	<script src="./js/d3-selection.min.js"></script>
+	<script src="./js/d3-path.min.js"></script>
+    <script type="module" src="./js/code/mat.min.js"></script>
+</head>
+<body>
+    <div class="container-fluid">
+    <div class="svg-box">
+        <svg class="multi" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <clipPath id="hor-clip">
+                    <rect x="0" y="0" width="500" height="100" />
+                </clipPath>
+                <clipPath id="ver-clip">
+                    <rect x="0" y="0" width="100" height="500" />
+                </clipPath>
+                <clipPath id="mat-clip">
+                    <rect x="0" y="0" width="500" height="500" />
+                </clipPath>
+            </defs>
+            <g class="corner">
+                <text id="auth" transform="translate(50, 50)">Кобдиков Тулеген</text>
+                <text id="mail" transform="translate(50, 75)">ndi89@mail.ru</text>
+            </g>
+            <g class="hor-ords" clip-path="url(#hor-clip)"/>
+            <g class="ver-ords" clip-path="url(#ver-clip)"></g>
+            <g class="matrix" clip-path="url(#mat-clip)"></g>
+        </svg>
+    </div>
+    <dialog class="controls d-none">
+        <input type="range" id="hor-range" name="hor-range" min="0" max="100" value="0" aria-orientation="horizontal"/>
+    </dialog>
+    </div>
+</body>
