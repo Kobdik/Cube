@@ -1,0 +1,30 @@
+{
+    "ords": {
+        "cached": true,
+        "file": "mat-ords.json"
+    },
+    "rows": {
+        "cached": true,
+        "file": "mat-rows.json"
+    },
+    "storno": {
+        "cached": true,
+        "file": "mat-storno.json"
+    },
+    "selection": {
+        "verOrds": [
+            "cem",
+            "vnd1",
+            "vnd2",
+            "st1",
+            "st2"
+        ],
+        "horOrds": [
+            "c2025-09",
+            "p2025"
+        ]
+    },
+    "import": {
+        "file": "mat-source-for-import.xlsx"
+    }
+}
