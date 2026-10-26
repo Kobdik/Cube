@@ -14,24 +14,132 @@
     /* --COLOR_CELL: hsl(191, 22%, 90%); */
     --COLOR_TEXT: #311b01;
 }
-html{
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+
+html {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
 }
-body{
+
+body {
     display: flex;
     align-items: center;
     justify-content: center;
 }
+
 div.controls {
     height: 50px;
 }
-#hor-range
-{
+
+dialog.controls,
+dialog.scaling {
+    padding: 0;
+    border: 1px solid var(--COLOR_MAIN);
+    border-radius: 0.5rem;
+    color: var(--COLOR_TEXT);
+    background: #fff;
+    box-shadow: 0 0.5rem 1.5rem rgba(49, 27, 1, 0.2);
+}
+
+dialog.controls {
+    width: min(340px, calc(100vw - 2rem));
+}
+
+dialog.scaling {
+    width: min(420px, calc(100vw - 2rem));
+}
+
+dialog.controls::backdrop,
+dialog.scaling::backdrop {
+    background: rgba(49, 27, 1, 0.28);
+}
+
+dialog.controls .card-header,
+dialog.scaling .card-header {
+    background: var(--COLOR_MAIN);
+    color: var(--COLOR_TEXT);
+    border-bottom: none;
+}
+
+dialog.scaling .card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+dialog.scaling .scaling-error {
+    color: #cd2613;
+    font-size: 0.875rem;
+}
+
+dialog.transfer .transfer-target {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+dialog.transfer .transfer-target legend {
+    float: none;
+    width: auto;
+    margin: 0;
+    padding: 0;
+    font-size: inherit;
+}
+
+dialog.transfer .transfer-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+dialog.scaling .scaling-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+dialog.scaling .btn-cancel,
+dialog.scaling .btn-apply {
+    color: var(--COLOR_TEXT);
+    border: 1px solid var(--COLOR_MAIN);
+}
+
+dialog.scaling .btn-apply {
+    background: var(--COLOR_MAIN);
+}
+
+dialog.scaling .btn-cancel {
+    background: #fff;
+}
+
+dialog.scaling .btn-cancel:hover,
+dialog.scaling .btn-apply:hover {
+    background: var(--COLOR_SELECT);
+    color: var(--COLOR_TEXT);
+    border-color: var(--COLOR_MAIN);
+}
+
+dialog.controls .list-group-item {
+    color: var(--COLOR_TEXT);
+}
+
+dialog.controls .list-group-item-action:hover,
+dialog.controls .list-group-item-action:focus {
+    background: var(--COLOR_SELECT);
+    color: var(--COLOR_TEXT);
+}
+
+#hor-range {
     margin-left: 400px;
     height: 20px;
     width: 50vh;
 }
+
 div.svg-box {
     width: 100vw;
     height: 100vh;
@@ -41,75 +149,124 @@ div.svg-box {
     overflow-x: clip;
     scroll-behavior: unset;
     scrollbar-width: thin;
-	scrollbar-color: lightgray transparent;
+    scrollbar-color: lightgray transparent;
 }
+
 path.curve {
     stroke: var(--COLOR_MAIN);
     fill: none;
 }
+
 g text {
     fill: var(--COLOR_TEXT);
     user-select: none;
 }
+
 g.neg text {
-    fill:#cd2613;
+    fill: #cd2613;
     user-select: none;
 }
+
 g.pos text {
-    fill:#1351cd;
+    fill: #1351cd;
     user-select: none;
 }
+
 g.cls text {
     text-decoration: underline;
 }
+
 g.exp text:hover {
     transition: all 50ms linear;
     fill: var(--COLOR_HOVER);
 }
+
 g.hide {
     display: none;
 }
+
 g.sub rect {
     fill: var(--COLOR_MAIN);
 }
+
 g.ver-node.sel rect {
     fill: var(--COLOR_SELECT);
 }
+
 g.hor-node.sel rect {
     fill: var(--COLOR_SELECT);
     /* height: 100%; */
 }
+
 g.tape.sel rect {
     fill: var(--COLOR_SELECT);
     opacity: 20%;
 }
-rect.cmd-hor, rect.cmd-ver {
+
+rect.corner,
+rect.cmd-hor,
+rect.cmd-ver {
     fill: var(--COLOR_BG);
     opacity: 20%;
 }
+
+rect.corner {
+    height: var(--HOR_HEIGHT);
+    width: var(--VER_WIDTH);
+}
+
+.mnu-btn {
+    cursor: pointer;
+}
+
+#mnu {
+    width: 36px;
+    height: 36px;
+    fill: var(--COLOR_MAIN);
+    opacity: 0.95;
+    cursor: pointer;
+}
+
+#mnu:hover {
+    fill: var(--COLOR_HOVER);
+}
+
+path.mnu-icon {
+    fill: none;
+    stroke: var(--COLOR_TEXT);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    pointer-events: none;
+}
+
 rect.cmd-hor {
     height: var(--HOR_HEIGHT);
     width: var(--HOR_WIDTH);
 }
+
 rect.cmd-ver {
     height: var(--VER_HEIGHT);
     width: var(--VER_WIDTH);
     /* width: 100%; */
 }
+
 g.cell rect {
     height: var(--VER_HEIGHT);
     width: var(--HOR_WIDTH);
     fill: var(--COLOR_BG);
     opacity: 20%;
 }
+
 g.tape g.cell.sel rect {
     fill: var(--COLOR_SELECT);
     opacity: 20%;
 }
+
 g.tape.sel g.cell.sel rect {
     opacity: 40%;
 }
+
 g.cell text {
-   font-family:'Courier New';
-   text-anchor: end;
+    font-family: 'Courier New';
+    text-anchor: end;
 }

@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Инструмент планирования — прототип</title>
+<style>
+  :root {
+    --ink: #14171c;
+    --soft: #4d5562;
+    --faint: #8a919c;
+    --rule: #dfe3e8;
+    --rule-strong: #c4cad2;
+    --paper: #ffffff;
+    --tint: #f3f5f8;
+    --blue: #1d3f8f;
+    --blue-tint: #e8eef9;
+    --red: #b42318;
+    --red-tint: #fbeceb;
+    --mono: Consolas, "Cascadia Mono", "Courier New", monospace;
+    --sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #1a1d22; }
+  body { font-family: var(--sans); color: var(--ink); overflow: hidden; }
+  .stage {
+    position: absolute; left: 50%; top: 50%;
+    width: 1440px; height: 810px;
+  }
+  .slide {
+    display: none;
+    position: absolute; inset: 0;
+    background: var(--paper);
+    padding: 0 88px 0 152px;
+    overflow: hidden;
+  }
+  .slide.active { display: block; }
+  /* Signature: a ledger margin with row numbers. */
+  .slide::before {
+    content: "";
+    position: absolute; left: 0; top: 0; bottom: 0; width: 104px;
+    background: var(--tint);
+    border-right: 1px solid var(--rule-strong);
+  }
+  .ledger {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 104px;
+    font-family: var(--mono); font-size: 13px; color: var(--faint);
+    text-align: right; padding: 0 18px 0 0;
+  }
+  .ledger span { position: absolute; right: 18px; }
+  .code {
+    position: absolute; top: 56px; left: 152px;
+    font-family: var(--mono); font-size: 15px; color: var(--blue);
+    letter-spacing: 0.02em;
+  }
+  h1 {
+    position: absolute; top: 88px; left: 152px; right: 88px;
+    margin: 0;
+    font-size: 48px; line-height: 1.12; font-weight: 600; letter-spacing: -0.015em;
+  }
+  .body { position: absolute; top: 236px; left: 152px; right: 88px; bottom: 96px; }
+  .pager {
+    position: absolute; left: 152px; right: 88px; bottom: 36px;
+    display: flex; justify-content: space-between;
+    font-size: 14px; color: var(--faint); border-top: 1px solid var(--rule); padding-top: 14px;
+  }
+  .pager b { font-family: var(--mono); color: var(--ink); font-weight: 600; }
+  p { margin: 0; }
+  .lead { font-size: 26px; line-height: 1.42; color: var(--soft); max-width: 40ch; }
+  .lead strong { color: var(--ink); font-weight: 600; }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .neg { color: var(--red); }
+
+  /* Title */
+  .title h1 { top: 300px; font-size: 68px; max-width: 15ch; }
+  .title .lead { position: absolute; top: 488px; left: 152px; }
+  .title .code { top: 260px; }
+
+  /* Year cycle */
+  .cycle { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 2px solid var(--ink); }
+  .cycle div { padding: 22px 22px 0 0; border-right: 1px solid var(--rule); min-height: 300px; }
+  .cycle div + div { padding-left: 22px; }
+  .cycle div:last-child { border-right: 0; }
+  .cycle .k { font-family: var(--mono); font-size: 14px; color: var(--blue); }
+  .cycle h3 { margin: 10px 0 12px; font-size: 24px; font-weight: 600; line-height: 1.2; }
+  .cycle p { font-size: 19px; line-height: 1.42; color: var(--soft); }
+
+  /* Code vs report */
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
+  pre.decl {
+    margin: 0; padding: 22px 24px;
+    background: var(--tint); border-left: 3px solid var(--blue);
+    font-family: var(--mono); font-size: 17px; line-height: 1.5; color: var(--ink);
+    white-space: pre;
+  }
+  pre.decl .s { color: var(--blue); }
+  .caption { margin-top: 12px; font-size: 15px; color: var(--faint); }
+  .rows { border-top: 2px solid var(--ink); }
+  .rows .r {
+    display: grid; grid-template-columns: 1fr auto; gap: 24px;
+    padding: 13px 0; border-bottom: 1px solid var(--rule); font-size: 21px;
+  }
+  .rows .r.sum { font-weight: 600; border-bottom: 2px solid var(--ink); }
+  .rows .r .op { font-family: var(--mono); color: var(--blue); font-size: 17px; }
+
+  /* Layers */
+  .layers { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 56px; }
+  .tree { font-size: 22px; }
+  .tree .n { display: flex; align-items: center; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--rule); }
+  .tree .n code { font-family: var(--mono); font-size: 15px; color: var(--faint); width: 86px; flex: none; }
+  .tree .n.l1 { padding-left: 0; font-weight: 600; }
+  .tree .n.l2 { padding-left: 34px; }
+  .tree .n.l3 { padding-left: 68px; }
+  .tree .n.apart { margin-top: 26px; border-top: 1px dashed var(--rule-strong); color: var(--soft); }
+  .tree label { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+  .tree input { width: 20px; height: 20px; accent-color: var(--blue); margin: 0; }
+  .formula {
+    padding: 22px 24px; background: var(--blue-tint); color: var(--blue);
+    font-size: 22px; line-height: 1.45; min-height: 128px;
+  }
+  .formula b { font-weight: 600; }
+  .side p + p { margin-top: 18px; }
+  .side p { font-size: 20px; line-height: 1.45; color: var(--soft); }
+
+  /* Scaling */
+  .steps { counter-reset: s; border-top: 2px solid var(--ink); }
+  .steps .st { counter-increment: s; display: grid; grid-template-columns: 64px 1fr 360px; gap: 18px; padding: 18px 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+  .steps .st::before { content: counter(s, decimal-leading-zero); font-family: var(--mono); font-size: 18px; color: var(--blue); }
+  .steps .st p { font-size: 21px; line-height: 1.4; }
+  .steps .st code { font-family: var(--mono); font-size: 18px; color: var(--soft); }
+
+  /* Plan-fact grids */
+  .grids { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+  .grid { border-top: 2px solid var(--ink); }
+  .grid .gh { font-size: 15px; color: var(--faint); padding: 12px 0 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .grid .gr { display: grid; grid-template-columns: 1fr auto; padding: 11px 0; border-bottom: 1px solid var(--rule); font-size: 20px; }
+  .grid .gr.tot { font-weight: 600; background: var(--blue-tint); padding-left: 10px; padding-right: 10px; margin: 0 -10px; border-bottom: 0; }
+  .grid .gr.tot .num { color: var(--blue); }
+  .grid .gr .num { font-size: 20px; }
+  .grid .gr .out { font-size: 16px; color: var(--faint); }
+  .under { margin-top: 34px; font-size: 21px; line-height: 1.45; color: var(--soft); max-width: 62ch; }
+
+  /* Scenario selector */
+  .scen { display: grid; grid-template-columns: 0.95fr 1.05fr; gap: 56px; }
+  .cols { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 2px solid var(--ink); }
+  .cols .c { padding: 16px 14px; border-right: 1px solid var(--rule); min-height: 170px; }
+  .cols .c:last-child { border-right: 0; }
+  .cols .c .t { font-size: 18px; font-weight: 600; }
+  .cols .c .d { margin-top: 8px; font-size: 15px; color: var(--faint); }
+  .cols .c.plan { background: var(--tint); }
+  .cols button.c {
+    font: inherit; text-align: left; background: var(--paper); color: var(--ink);
+    border: 0; border-right: 1px solid var(--rule); cursor: pointer;
+    display: flex; flex-direction: column; justify-content: flex-start;
+  }
+  .cols button.c[aria-pressed="true"] { background: var(--blue); color: #fff; }
+  .cols button.c[aria-pressed="true"] .d { color: #c9d6f2; }
+  .state { margin-top: 22px; font-size: 21px; line-height: 1.45; color: var(--ink); min-height: 64px; }
+  .hint { margin-top: 10px; font-size: 15px; color: var(--faint); }
+
+  /* Gap */
+  .gap { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; }
+  .calc { border-top: 2px solid var(--ink); }
+  .calc .r { display: grid; grid-template-columns: 1fr auto; padding: 13px 0; border-bottom: 1px solid var(--rule); font-size: 21px; }
+  .calc .r.res { border-bottom: 2px solid var(--ink); font-weight: 600; background: var(--red-tint); padding-left: 10px; padding-right: 10px; margin: 0 -10px; }
+  table.storno { border-collapse: collapse; width: 100%; font-size: 17px; }
+  table.storno th { text-align: left; font-weight: 500; color: var(--faint); font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; padding: 0 10px 10px 0; border-bottom: 2px solid var(--ink); }
+  table.storno td { padding: 11px 10px 11px 0; border-bottom: 1px solid var(--rule); font-family: var(--mono); }
+  table.storno td.v { text-align: right; padding-right: 0; }
+  table.storno th.v { text-align: right; padding-right: 0; }
+
+  /* Recalc */
+  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border-top: 2px solid var(--ink); }
+  .flow div { padding: 20px 22px 0 0; border-right: 1px solid var(--rule); min-height: 250px; }
+  .flow div + div { padding-left: 22px; }
+  .flow div:last-child { border-right: 0; }
+  .flow .k { font-family: var(--mono); font-size: 14px; color: var(--blue); }
+  .flow h3 { margin: 10px 0 10px; font-size: 22px; font-weight: 600; line-height: 1.25; }
+  .flow p { font-size: 18px; line-height: 1.45; color: var(--soft); }
+  .tag { display: inline-block; margin-top: 26px; font-size: 15px; padding: 6px 10px; border: 1px solid var(--blue); color: var(--blue); }
+
+  /* Arch */
+  .arch { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; align-items: stretch; }
+  .arch .b { border: 1px solid var(--rule-strong); padding: 20px; position: relative; background: var(--paper); }
+  .arch .b + .b { border-left: 0; }
+  .arch .b.hi { background: var(--blue-tint); border-color: var(--blue); }
+  .arch .b .k { font-family: var(--mono); font-size: 15px; color: var(--blue); }
+  .arch .b h3 { margin: 8px 0 10px; font-size: 22px; font-weight: 600; }
+  .arch .b p { font-size: 17px; line-height: 1.45; color: var(--soft); }
+  .arch-note { margin-top: 34px; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
+  .arch-note p { font-size: 20px; line-height: 1.45; color: var(--soft); }
+
+  /* Status */
+  .status { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; }
+  .status h3 { margin: 0 0 6px; font-size: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--blue); }
+  .status h3.next { color: var(--soft); }
+  .status ul { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--ink); }
+  .status li { padding: 12px 0; border-bottom: 1px solid var(--rule); font-size: 20px; line-height: 1.38; }
+
+  /* Pilot */
+  .ask { border-top: 2px solid var(--ink); }
+  .ask .q { display: grid; grid-template-columns: 64px 1fr; gap: 18px; padding: 20px 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+  .ask .q .k { font-family: var(--mono); font-size: 18px; color: var(--blue); }
+  .ask .q p { font-size: 24px; line-height: 1.38; }
+  .ask .q p span { display: block; font-size: 18px; color: var(--soft); margin-top: 4px; }
+
+  .progress { position: fixed; left: 0; bottom: 0; height: 3px; background: var(--blue); transition: width 0.2s; }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+
+<!-- 1 -->
+<section class="slide title">
+  <div class="ledger"></div>
+  <div class="code">p2025 · r2025 · saldo</div>
+  <h1>Инструмент для планового отдела</h1>
+  <p class="lead">Бюджеты, план-факт, движение денег и материалов, сценарии для руководства. Каждый отчёт описывается деревом статей и операциями над ними.</p>
+  <div class="pager"><span>Прототип для обсуждения пилота</span><b>01</b></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <div class="ledger"></div>
+  <div class="code">год планового отдела</div>
+  <h1>Пять задач, одна модель данных</h1>
+  <div class="body">
+    <div class="cycle">
+      <div><span class="k">01 бюджет</span><h3>Доходы и расходы</h3><p>Начальный план по статьям, подразделениям и месяцам.</p></div>
+      <div><span class="k">02 корректировки</span><h3>Слои изменений</h3><p>План уточняется в течение года. Каждый слой виден отдельно.</p></div>
+      <div><span class="k">03 сравнение</span><h3>План-факт и прошлые годы</h3><p>Разница видна сразу и раскладывается по любому разрезу.</p></div>
+      <div><span class="k">04 движение</span><h3>Деньги и материалы</h3><p>Поступление, расход и остаток на каждый день.</p></div>
+      <div><span class="k">05 сценарии</span><h3>Что будет, если</h3><p>Сдвиг поставки или платежа и его последствия для остатка.</p></div>
+    </div>
+  </div>
+  <div class="pager"><span>Все пять задач работают на одних и тех же записях</span><b>02</b></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <div class="ledger"></div>
+  <div class="code">op: "sub" · beg · end</div>
+  <h1>Отчёт о движении задаётся описанием</h1>
+  <div class="body">
+    <div class="pair">
+      <div>
+        <pre class="decl">{
+  <span class="s">"tid"</span>: "saldo",
+  <span class="s">"oper"</span>: {
+    <span class="s">"op"</span>: "sub",
+    <span class="s">"sa"</span>: "mat-inp",
+    <span class="s">"sb"</span>: "mat-out",
+    <span class="s">"beg"</span>: "saldo-beg",
+    <span class="s">"end"</span>: "saldo-end"
+  },
+  <span class="s">"caption"</span>: "Изменение остатков"
+}</pre>
+        <p class="caption">Узел из описания прототипа движения материалов</p>
+      </div>
+      <div>
+        <div class="rows">
+          <div class="r"><span>Остаток на начало</span><span class="op">beg</span></div>
+          <div class="r"><span>Поступление</span><span class="op">sa</span></div>
+          <div class="r"><span>Расход</span><span class="op">sb</span></div>
+          <div class="r"><span>Изменение остатка</span><span class="op">sa − sb</span></div>
+          <div class="r sum"><span>Остаток на конец</span><span class="op">end</span></div>
+        </div>
+        <p class="under" style="margin-top:26px">Конец дня переходит в начало следующего дня, конец месяца — в начало следующего месяца. Для движения денег достаточно таких же узлов со статьями поступлений и выплат.</p>
+      </div>
+    </div>
+  </div>
+  <div class="pager"><span>Операции узлов: add, sub, quo и остаток</span><b>03</b></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <div class="ledger"></div>
+  <div class="code">p2025 = p2025b + p2025c</div>
+  <h1>План складывается из слоёв</h1>
+  <div class="body">
+    <div class="layers">
+      <div class="tree" id="layers">
+        <div class="n l1"><code>p2025</code>План</div>
+        <div class="n l2"><code>p2025b</code>Начальный план</div>
+        <div class="n l2"><code>p2025c</code>Корректировки</div>
+        <div class="n l3"><code>p2025c1</code><label><input type="checkbox" value="1-я" checked>1-я корректировка</label></div>
+        <div class="n l3"><code>p2025c2</code><label><input type="checkbox" value="2-я" checked>2-я корректировка</label></div>
+        <div class="n l3"><code>p2025c3</code><label><input type="checkbox" value="3-я" checked>3-я корректировка</label></div>
+        <div class="n apart"><code>p2025s</code>Сценарий A — отдельная колонка вне плана</div>
+      </div>
+      <div class="side">
+        <div class="formula" id="layers-formula"></div>
+        <p style="margin-top:26px">Корректировки складываются: включённые слои входят в план, выключенные остаются в данных и не попадают в итог.</p>
+        <p>Слой приходит из внешней системы или собирается здесь же из масштабирования статей.</p>
+      </div>
+    </div>
+  </div>
+  <div class="pager"><span>Отметьте слои — формула плана пересоберётся</span><b>04</b></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <div class="ledger"></div>
+  <div class="code">val = val + m · base</div>
+  <h1>Корректировка из масштабирования статей</h1>
+  <div class="body">
+    <div class="steps">
+      <div class="st"><p>Выбрать статьи на всех осях: период, статью, подразделение.</p><code>выборка по всем осям</code></div>
+      <div class="st"><p>Задать множитель от −1 до +1. Исходная величина запоминается как база.</p><code>m ∈ [−1; +1]</code></div>
+      <div class="st"><p>Перенести изменение в слой: 1-я, 2-я или 3-я корректировка.</p><code>слой = val − base</code></div>
+      <div class="st"><p>Исходные статьи возвращаются к базе. План меняется только через слой.</p><code>val = base</code></div>
+    </div>
+    <p class="under">Система сама формирует записи корректировки. Куда и как их записывать, решается вместе с заказчиком по ходу пилота.</p>
+  </div>
+  <div class="pager"><span>Работает в прототипе: масштабирование и перенос в слой</span><b>05</b></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <div class="ledger"></div>
+  <div class="code">s2025r2025p = r2025 − p2025</div>
+  <h1>Одна разница в каждом разрезе</h1>
+  <div class="body">
+    <div class="grids">
+      <div class="grid">
+        <div class="gh">Факт и план, год</div>
+        <div class="gr"><span>Факт 2025</span><span class="num">26 623</span></div>
+        <div class="gr"><span>План 2025</span><span class="num">23 453</span></div>
+        <div class="gr tot"><span>Факт − План</span><span class="num">3 170</span></div>
+      </div>
+      <div class="grid">
+        <div class="gh">Элементы затрат</div>
+        <div class="gr"><span>Амортизация</span><span class="num">3 170</span></div>
+        <div class="gr"><span>Остальные элементы</span><span class="out">вне выборки</span></div>
+        <div class="gr tot"><span>Итог выборки</span><span class="num">3 170</span></div>
+      </div>
+      <div class="grid">
+        <div class="gh">Подразделения</div>
+        <div class="gr"><span>Подразделение 1</span><span class="num">3 170</span></div>
+        <div class="gr"><span>Подразделение 2</span><span class="out">вне выборки</span></div>
+        <div class="gr tot"><span>Итог выборки</span><span class="num">3 170</span></div>
+      </div>
+    </div>
+    <p class="under">Один щелчок по «Факт 2025 − План 2025» вычитает план со всеми корректировками из факта. Связанные таблицы раскладывают ту же сумму по элементам затрат и подразделениям.</p>
+  </div>
+  <div class="pager"><span>Бюджет затрат прототипа · 29 160 записей · выбраны «Амортизация» и «Подразделение 1»</span><b>06</b></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <div class="ledger"></div>
+  <div class="code">сценарий ≠ слой плана</div>
+  <h1>Сценарии вне плана, по одному</h1>
+  <div class="body">
+    <div class="scen">
+      <div class="side">
+        <p>Сценарий показывает вероятную ситуацию, прежде всего неблагоприятную: сдвиг поставки, задержку платежа.</p>
+        <p>Колонок со сценариями может быть несколько. Они взаимоисключающие, поэтому выбран всегда один.</p>
+      </div>
+      <div>
+        <div class="cols" id="scen">
+          <div class="c plan"><div class="t">План</div><div class="d">всегда в итоге</div></div>
+          <button class="c" type="button" aria-pressed="false" data-name="Сценарий A"><div class="t">Сценарий A</div><div class="d">поставка 16-го</div></button>
+          <button class="c" type="button" aria-pressed="false" data-name="Сценарий B"><div class="t">Сценарий B</div><div class="d">другое событие</div></button>
+          <button class="c" type="button" aria-pressed="false" data-name="Сценарий C"><div class="t">Сценарий C</div><div class="d">другое событие</div></button>
+        </div>
+        <p class="state" id="scen-state"></p>
+        <p class="hint">Щёлкните по колонке сценария</p>
+      </div>
+    </div>
+  </div>
+  <div class="pager"><span>Выбор второго сценария снимает первый</span><b>07</b></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <div class="ledger"></div>
+  <div class="code">11 сентября · цемент · склад 2</div>
+  <h1>Разрыв, который видит руководство</h1>
+  <div class="body">
+    <div class="gap">
+      <div>
+        <div class="calc">
+          <div class="r"><span>Остаток склада 2 на конец 15 сентября</span><span class="num">5 785</span></div>
+          <div class="r"><span>В нём поставка 15 сентября</span><span class="num">6 173</span></div>
+          <div class="r res"><span>Поставка задержалась на день</span><span class="num neg">−388</span></div>
+        </div>
+        <p class="under" style="margin-top:24px">Без ответных мер склад 2 уходит в минус на 388. Сценарий A вместе с поставкой переносит на 16-е расход 456 по проекту 2, и остаток остаётся неотрицательным. Сейчас это сделано вручную, в пилоте — автоматически.</p>
+      </div>
+      <div>
+        <table class="storno">
+          <thead><tr><th>Дата</th><th>Статья</th><th class="v">Величина</th></tr></thead>
+          <tbody>
+            <tr><td>15.09</td><td>Поставщик 1</td><td class="v neg">−6 173</td></tr>
+            <tr><td>16.09</td><td>Поставщик 1</td><td class="v">6 173</td></tr>
+            <tr><td>15.09</td><td>Проект 2</td><td class="v neg">−456</td></tr>
+            <tr><td>16.09</td><td>Проект 2</td><td class="v">456</td></tr>
+          </tbody>
+        </table>
+        <p class="caption">Записи сторно сценария A: цемент, склад 2, дм³</p>
+      </div>
+    </div>
+  </div>
+  <div class="pager"><span>Сторно: минус на старой дате, плюс на новой</span><b>08</b></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <div class="ledger"></div>
+  <div class="code">остаток ≥ 0</div>
+  <h1>Пересчёт остатков без минуса</h1>
+  <div class="body">
+    <div class="flow">
+      <div><span class="k">шаг 1</span><h3>Сдвиг выбранных ячеек</h3><p>Пользователь сдвигает поставку или расход на несколько дней. Система пишет сторно в колонку сценария.</p></div>
+      <div><span class="k">шаг 2</span><h3>Показ разрывов</h3><p>Дни и склады с отрицательным остатком выделены. Это картина для совещания у руководства.</p></div>
+      <div><span class="k">шаг 3</span><h3>Отложенный расход</h3><p>Система переносит часть расхода сторно на день, когда материал поступает на склад. Остаток держится на нуле.</p></div>
+      <div><span class="k">шаг 4</span><h3>Последствия</h3><p>Видно, какие проекты и работы сдвигаются и на сколько дней.</p></div>
+    </div>
+    <span class="tag">В прототипе сдвиг загружен записями сценария, разрыв виден в отчёте. Сдвиг из интерфейса и пересчёт без минуса — доработка пилота.</span>
+  </div>
+  <div class="pager"><span>Тот же механизм подходит для платёжного календаря</span><b>09</b></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <div class="ledger"></div>
+  <div class="code">Postgres → flow → face → браузер</div>
+  <h1>Сервер отдаёт записи, браузер считает</h1>
+  <div class="body">
+    <div class="arch">
+      <div class="b"><span class="k">Postgres</span><h3>Записи</h3><p>Ключи измерений и величина. Факт, план, слои, сценарии — одна таблица.</p></div>
+      <div class="b"><span class="k">flow · Go</span><h3>Поток</h3><p>gRPC-поток записей по маске: поступления, расход или всё вместе.</p></div>
+      <div class="b"><span class="k">face · Go</span><h3>Веб</h3><p>Отдаёт страницы и записи потоком JSON.</p></div>
+      <div class="b hi"><span class="k">браузер</span><h3>Куб</h3><p>Итоги по деревьям, план-факт, остатки, масштабирование. Щелчок пересчитывает все связанные таблицы.</p></div>
+    </div>
+    <div class="arch-note">
+      <p>Деревья статей любой глубины: оргструктура, элементы затрат, проекты с объектами и задачами. Ветви разной длины не нужно выравнивать.</p>
+      <p>Выгрузка исходных записей в Excel уже есть. Новый отчёт — новое описание дерева на тех же записях.</p>
+    </div>
+  </div>
+  <div class="pager"><span>Нагрузка расчёта остаётся у пользователя, сервер только читает базу</span><b>10</b></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <div class="ledger"></div>
+  <div class="code">прототип → пилот</div>
+  <h1>Что работает и что доделываем</h1>
+  <div class="body">
+    <div class="status">
+      <div>
+        <h3>Работает в прототипе</h3>
+        <ul>
+          <li>Бюджет затрат: план из начального плана и трёх слоёв</li>
+          <li>План-факт и сравнение с прошлым годом в связанных таблицах</li>
+          <li>Масштабирование выборки и перенос изменения в слой</li>
+          <li>Движение материалов с остатками по дням</li>
+          <li>Сценарий сдвига поставки сторно</li>
+          <li>Выгрузка исходных записей в Excel</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="next">Доделываем в пилоте</h3>
+        <ul>
+          <li>Бюджет доходов и движение денег на статьях заказчика</li>
+          <li>Запись слоя корректировки в базу</li>
+          <li>Сдвиг выбранных ячеек на несколько дней из интерфейса</li>
+          <li>Пересчёт остатков без минуса</li>
+          <li>Выбор только одного сценария в интерфейсе</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="pager"><span>Прототип — основа под систему конкретного заказчика</span><b>11</b></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <div class="ledger"></div>
+  <div class="code">согласовать</div>
+  <h1>Что нужно для пилота</h1>
+  <div class="body">
+    <div class="ask">
+      <div class="q"><span class="k">01</span><p>С какого отчёта начинаем<span>Бюджет расходов, движение денег или движение материалов</span></p></div>
+      <div class="q"><span class="k">02</span><p>Какие разрезы смотрят первыми<span>Два-три дерева: статьи, подразделения, проекты, склады</span></p></div>
+      <div class="q"><span class="k">03</span><p>Откуда приходят факт и план<span>Учётная система, выгрузки Excel, загрузка корректировок</span></p></div>
+      <div class="q"><span class="k">04</span><p>Куда уходит утверждённый план<span>И кто утверждает корректировку</span></p></div>
+    </div>
+  </div>
+  <div class="pager"><span>Спасибо</span><b>12</b></div>
+</section>
+
+</div>
+<div class="progress" id="progress"></div>
+<script>
+(function () {
+  const stage = document.getElementById("stage");
+  const slides = Array.from(document.querySelectorAll(".slide"));
+  const progress = document.getElementById("progress");
+  let cur = 0;
+
+  slides.forEach(s => {
+    const ledger = s.querySelector(".ledger");
+    for (let i = 1; i <= 26; i++) {
+      const span = document.createElement("span");
+      span.style.top = (i * 30 - 8) + "px";
+      span.textContent = i;
+      ledger.appendChild(span);
+    }
+  });
+
+  function fit() {
+    const k = Math.min(window.innerWidth / 1440, window.innerHeight / 810);
+    stage.style.transform = "translate(-50%, -50%) scale(" + k + ")";
+  }
+  function show(n) {
+    cur = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, i) => s.classList.toggle("active", i === cur));
+    progress.style.width = ((cur + 1) / slides.length * 100) + "%";
+  }
+
+  const layers = document.getElementById("layers");
+  const formula = document.getElementById("layers-formula");
+  function renderLayers() {
+    const on = Array.from(layers.querySelectorAll("input:checked")).map(i => i.value + " корректировка");
+    formula.innerHTML = "<b>План</b> = Начальный план" + (on.length ? " + " + on.join(" + ") : "");
+  }
+  layers.addEventListener("change", renderLayers);
+  renderLayers();
+
+  const scen = document.getElementById("scen");
+  const scenState = document.getElementById("scen-state");
+  function renderScen() {
+    const active = scen.querySelector('button[aria-pressed="true"]');
+    scenState.textContent = active
+      ? "Показан план и " + active.dataset.name + ". Остальные сценарии в отчёт не входят."
+      : "Показан только план. Сценарий не выбран.";
+  }
+  scen.addEventListener("click", e => {
+    const btn = e.target.closest("button.c");
+    if (!btn) return;
+    const was = btn.getAttribute("aria-pressed") === "true";
+    scen.querySelectorAll("button.c").forEach(b => b.setAttribute("aria-pressed", "false"));
+    if (!was) btn.setAttribute("aria-pressed", "true");
+    renderScen();
+  });
+  renderScen();
+
+  window.addEventListener("resize", fit);
+  window.addEventListener("keydown", e => {
+    if (["ArrowRight", "PageDown", " "].includes(e.key)) { show(cur + 1); e.preventDefault(); }
+    else if (["ArrowLeft", "PageUp", "Backspace"].includes(e.key)) { show(cur - 1); e.preventDefault(); }
+    else if (e.key === "Home") show(0);
+    else if (e.key === "End") show(slides.length - 1);
+  });
+  stage.addEventListener("click", e => {
+    if (e.target.closest("button, input, label")) return;
+    const r = stage.getBoundingClientRect();
+    show((e.clientX - r.left) / r.width < 0.3 ? cur - 1 : cur + 1);
+  });
+
+  fit();
+  show(0);
+})();
+</script>
+</body>
+</html>
